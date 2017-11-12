@@ -2,5 +2,15 @@ build cmds
 1: cmake .. -G "Unix Makefiles" && make
 2: ./particle_filter
 
+init 	x:.175 y:.152 @num particles 10
+init 	x:.107 y:.111 @num particles 100
+predict x:.112 y:.104 
+weight1/2  pass
+association pass(slower)
+weight1/2  ?
 
-20171020
+num 50 x:.117 y:.112 T:67.74
+num 25 x:.137 y:.129 T:75
+num 10 Error !
+num 75 x:.113 y:.108 T:53
+base 	x:.114 y:.103
