@@ -1,0 +1,6 @@
+build cmds
+1: cmake .. -G "Unix Makefiles" && make
+2: ./particle_filter
+
+
+20171020
