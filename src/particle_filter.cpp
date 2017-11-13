@@ -31,7 +31,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_theta(theta, std[2]);
 	for (int i = 0; i < num_particles; ++i) {
 		Particle particle;
-		double sample_x, sample_y, sample_theta;
 		// Sample  and from these normal distrubtions like this: 
 		//	sample_x = dist_x(gen);
 		//	where "gen" is the random engine initialized earlier.
@@ -53,13 +52,17 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 	default_random_engine gen;
-	double velocity_over_yaw_rate = (yaw_rate == 0) ? velocity / 1e-6 : velocity / yaw_rate;
-	//Particle particle; for (int i = 0; i < particles.size(); i++) { particle = particles[i]
+	//######## REQUIRED #####################
+	//update yaw_rate : when yaw _ate is ~equal to zero. we devide velocity over 0.001, else devide velocity over yaw_rate
+	double velocity_over_yaw_rate = (fabs(yaw_rate) < 0.00001) ? velocity / 1e-3 : velocity / yaw_rate;
+	//######## ######## #####################
 	for (Particle& particle : particles) {
+		//I don't need to handle division by zero in the for loop because it is already handled before it : velocity_over_yaw_rate
 		double x = 0, y = 0, theta = 0;
 		double yaw_rate_time_delta_t = yaw_rate*delta_t;
-		x = particle.x + (velocity_over_yaw_rate * (sin(particle.theta + (yaw_rate_time_delta_t)) - sin(particle.theta)));//xf = x​0​​ + v/​​θ​˙​[sin(θ​0​​ + ​θ​˙​​(dt))−sin(θ​0​​)]
-		y = particle.y + (velocity_over_yaw_rate * (cos(particle.theta) - cos(particle.theta + (yaw_rate_time_delta_t))));//y​f​​ = y​0​​ + v/​​θ​˙​[cos(θ​0​​)−cos(θ​0​​ + ​θ​˙​​(dt))]
+		double theta_plus_yaw_rate_times_delta_t = particle.theta + (yaw_rate_time_delta_t)
+		x = particle.x + (velocity_over_yaw_rate * (sin(theta_plus_yaw_rate_times_delta_t) - sin(particle.theta)));//xf = x​0​​ + v/​​θ​˙​[sin(θ​0​​ + ​θ​˙​​(dt))−sin(θ​0​​)]
+		y = particle.y + (velocity_over_yaw_rate * (cos(particle.theta) - cos(theta_plus_yaw_rate_times_delta_t)));//y​f​​ = y​0​​ + v/​​θ​˙​[cos(θ​0​​)−cos(θ​0​​ + ​θ​˙​​(dt))]
 		theta = particle.theta + (yaw_rate * delta_t);	//θ​f​​ = θ​0​​ + ​θ​˙​​(dt)
 		//add gaussian noise , with mean = updated partical pos values , and standerd deviation = std_pos[]
 		normal_distribution<double> dist_x(x, std_pos[0]);
