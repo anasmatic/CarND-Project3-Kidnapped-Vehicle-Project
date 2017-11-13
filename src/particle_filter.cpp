@@ -166,12 +166,14 @@ void ParticleFilter::resample() {
 	// generate random starting index for resampling wheel
 	default_random_engine gen;
 	vector<Particle> next_particles;
-	discrete_distribution<int> unirealdist(weights.begin(), weights.end());
+	discrete_distribution<int> distribution(weights.begin(), weights.end());
 	// get max weight
 	double max_weight = *max_element(weights.begin(), weights.end());
 	// uniform random distribution [0.0, max_weight)
-	discrete_distribution<int> unirealdist(weights.begin(), weights.end());
+	uniform_real_distribution<double> unirealdist(0.0, max_weight);
 	// spin the resample wheel!
+	int index = distribution(gen);
+	double beta = 0.0;
 	for (int i = 0; i < num_particles; i++) {
 		beta += unirealdist(gen) * 2.0;
 		while (beta > weights[index]) {
