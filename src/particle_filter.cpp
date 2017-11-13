@@ -59,8 +59,10 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	for (Particle& particle : particles) {
 		//I don't need to handle division by zero in the for loop because it is already handled before it : velocity_over_yaw_rate
 		double x = 0, y = 0, theta = 0;
+		//do some calculations first to make the equations more readable
 		double yaw_rate_time_delta_t = yaw_rate*delta_t;
-		double theta_plus_yaw_rate_times_delta_t = particle.theta + (yaw_rate_time_delta_t)
+		double theta_plus_yaw_rate_times_delta_t = particle.theta + (yaw_rate_time_delta_t);
+		//calculate x, y ,theta
 		x = particle.x + (velocity_over_yaw_rate * (sin(theta_plus_yaw_rate_times_delta_t) - sin(particle.theta)));//xf = x​0​​ + v/​​θ​˙​[sin(θ​0​​ + ​θ​˙​​(dt))−sin(θ​0​​)]
 		y = particle.y + (velocity_over_yaw_rate * (cos(particle.theta) - cos(theta_plus_yaw_rate_times_delta_t)));//y​f​​ = y​0​​ + v/​​θ​˙​[cos(θ​0​​)−cos(θ​0​​ + ​θ​˙​​(dt))]
 		theta = particle.theta + (yaw_rate * delta_t);	//θ​f​​ = θ​0​​ + ​θ​˙​​(dt)
@@ -139,7 +141,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 //std::default_random_engine generator;
 std::default_random_engine generator;
 void ParticleFilter::resample() {
-	//https://discussions.udacity.com/t/output-always-zero/260432/11
+	/*//https://discussions.udacity.com/t/output-always-zero/260432/11
 	default_random_engine gen;
 	vector<Particle> next_particles;
 	discrete_distribution<int> index_roulette(weights.begin(), weights.end());
@@ -149,31 +151,56 @@ void ParticleFilter::resample() {
 		next_particles.push_back(particles[index]);
 	}
 	particles = next_particles;
-	/*
-	double max_weight = -999999;
-	for (Particle& particle : particles)
-		if (particle.weight > max_weight)
-			max_weight = particle.weight;
-	double mw = max_weight * 2;
+	*/
+	//double max_weight = -999999;
+	//for (Particle& particle : particles)
+	//	if (particle.weight > max_weight)
+	//		max_weight = particle.weight;
+	//double mw = max_weight * 2;
 	vector<Particle> resample_particles;
-	//because I don't know how to utilize discrete_distribution with resample wheel
-	std::uniform_int_distribution<int> dist_num_particles(0, num_particles);
-	int index = dist_num_particles(generator);
-	std::uniform_int_distribution<int> dist_mw(0, mw);
-	double beta = 0.0;
-	for (int i = 0; i < num_particles; i++)
-	{
-		beta += dist_mw(generator);
-		cout << "	while beta:" << beta ;
-		while (weights[index] < beta) {
+	// get all of the current weights
+	vector<double> weights;
+	for (int i = 0; i < num_particles; i++) {
+	  weights.push_back(particles[i].weight);
+	}
+	// generate random starting index for resampling wheel
+	default_random_engine gen;
+	vector<Particle> next_particles;
+	discrete_distribution<int> unirealdist(weights.begin(), weights.end());
+	// get max weight
+	double max_weight = *max_element(weights.begin(), weights.end());
+	// uniform random distribution [0.0, max_weight)
+	discrete_distribution<int> unirealdist(weights.begin(), weights.end());
+	// spin the resample wheel!
+	for (int i = 0; i < num_particles; i++) {
+		beta += unirealdist(gen) * 2.0;
+		while (beta > weights[index]) {
 			beta -= weights[index];
 			index = (index + 1) % num_particles; // %N to convert 1000 to 0
 		}
 		resample_particles.push_back(particles[index]);
 	}
-	cout << endl<<" beta" << beta<<endl;
+	
 	particles = resample_particles;
-	*/
+
+	//because I don't know how to utilize discrete_distribution with resample wheel
+	//std::uniform_int_distribution<int> dist_num_particles(0, num_particles);
+	//int index = dist_num_particles(generator);
+	//std::uniform_int_distribution<int> dist_mw(0, mw);
+	//double beta = 0.0;
+	//for (int i = 0; i < num_particles; i++)
+	//{
+	//	beta += dist_mw(generator);
+	//	cout << "	while beta:" << beta ;
+	//	while (weights[index] < beta) {
+	//		beta -= weights[index];
+	//		index = (index + 1) % num_particles; // %N to convert 1000 to 0
+	//	}
+	//	resample_particles.push_back(particles[index]);
+	//}
+	//cout << endl<<" beta" << beta<<endl;
+	//particles = resample_particles;
+	/**/
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
