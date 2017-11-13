@@ -52,10 +52,14 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 	default_random_engine gen;
-	//######## REQUIRED #####################
+	//######## REQUIRED 1 #####################
 	//update yaw_rate : when yaw _ate is ~equal to zero. we devide velocity over 0.001, else devide velocity over yaw_rate
 	double velocity_over_yaw_rate = (fabs(yaw_rate) < 0.00001) ? velocity / 1e-3 : velocity / yaw_rate;
-	//######## ######## #####################
+	//so instead of writing the same equation twice inside the foor loop,
+	//	 once to handle zero division, and the other to handle normal situation
+	//	I noticed that the only operation will be effected is (velocity/yaw_rate)
+	//	so I calculated it here, just before we enter the loop
+	//######## ######### #####################
 	for (Particle& particle : particles) {
 		//I don't need to handle division by zero in the for loop because it is already handled before it : velocity_over_yaw_rate
 		double x = 0, y = 0, theta = 0;
@@ -109,7 +113,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			obs_map.id = particles[i].id;
 			observations_map_coor.push_back(obs_map);
 		}
-		//add land mark if within sensor range
+		//add landmark if within sensor range
 		vector<LandmarkObs> landmarks_inrange;
 		for (Map::single_landmark_s const& landmark : map_landmarks.landmark_list)
 		{
@@ -122,8 +126,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 				landmarks_inrange.push_back(obs);
 			}
 		}
+
 		dataAssociation(landmarks_inrange, observations_map_coor);
 
+		//update weights according to how much partical match observation landmarks
 		particles[i].weight = 1;
 		for (LandmarkObs obs : observations_map_coor) {
 			LandmarkObs map_landmark = landmarks_inrange[obs.id];
@@ -138,25 +144,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	}
 }
 
-//std::default_random_engine generator;
-std::default_random_engine generator;
+//######## REQUIRED 2 #####################
 void ParticleFilter::resample() {
-	/*//https://discussions.udacity.com/t/output-always-zero/260432/11
-	default_random_engine gen;
-	vector<Particle> next_particles;
-	discrete_distribution<int> index_roulette(weights.begin(), weights.end());
-
-	for (int i = 0; i < num_particles; ++i) {
-		int index = index_roulette(gen);
-		next_particles.push_back(particles[index]);
-	}
-	particles = next_particles;
-	*/
-	//double max_weight = -999999;
-	//for (Particle& particle : particles)
-	//	if (particle.weight > max_weight)
-	//		max_weight = particle.weight;
-	//double mw = max_weight * 2;
 	vector<Particle> resample_particles;
 	// get all of the current weights
 	vector<double> weights;
@@ -165,17 +154,18 @@ void ParticleFilter::resample() {
 	}
 	// generate random starting index for resampling wheel
 	default_random_engine gen;
-	vector<Particle> next_particles;
-	discrete_distribution<int> distribution(weights.begin(), weights.end());
+	discrete_distribution<int> distribution(weights.begin(), weights.end());//used for index
 	// get max weight
 	double max_weight = *max_element(weights.begin(), weights.end());
 	// uniform random distribution [0.0, max_weight)
-	uniform_real_distribution<double> unirealdist(0.0, max_weight);
-	// spin the resample wheel!
+	uniform_real_distribution<double> unirealdist(0.0, max_weight);//used for beta
+
+	//assign to index rand value from weights.begin() to weights.end()
 	int index = distribution(gen);
 	double beta = 0.0;
+	// spin the resample wheel!
 	for (int i = 0; i < num_particles; i++) {
-		beta += unirealdist(gen) * 2.0;
+		beta += unirealdist(gen) * 2.0;//assign rand value from 0 to max_weight * 2
 		while (beta > weights[index]) {
 			beta -= weights[index];
 			index = (index + 1) % num_particles; // %N to convert 1000 to 0
@@ -184,26 +174,9 @@ void ParticleFilter::resample() {
 	}
 	
 	particles = resample_particles;
-
-	//because I don't know how to utilize discrete_distribution with resample wheel
-	//std::uniform_int_distribution<int> dist_num_particles(0, num_particles);
-	//int index = dist_num_particles(generator);
-	//std::uniform_int_distribution<int> dist_mw(0, mw);
-	//double beta = 0.0;
-	//for (int i = 0; i < num_particles; i++)
-	//{
-	//	beta += dist_mw(generator);
-	//	cout << "	while beta:" << beta ;
-	//	while (weights[index] < beta) {
-	//		beta -= weights[index];
-	//		index = (index + 1) % num_particles; // %N to convert 1000 to 0
-	//	}
-	//	resample_particles.push_back(particles[index]);
-	//}
-	//cout << endl<<" beta" << beta<<endl;
-	//particles = resample_particles;
-	/**/
+	//thanks you, resampling wheel is working now <3
 }
+//######## ######### #####################
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
 {
