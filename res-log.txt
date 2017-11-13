@@ -13,4 +13,6 @@ num 50 x:.117 y:.112 T:67.74
 num 25 x:.137 y:.129 T:75
 num 10 Error !
 num 75 x:.113 y:.108 T:53
+num 100 ~almoost the same
+num 200 less error but more time
 base 	x:.114 y:.103
